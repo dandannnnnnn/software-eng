@@ -1,0 +1,32 @@
+---
+config:
+  layout: elk
+---
+flowchart LR
+ subgraph BlogPlatform["BlogPlatform"]
+        UC1["Account aanmaken/inloggen"]
+        UC2["Blogpost schrijven"]
+        UC3["Blogpost publiceren"]
+        UC4["Blogpost bewerken/verwijderen"]
+        UC5["Reageren op comments"]
+        UC6["Feedback geven op andere blogs"]
+        UC7["Statistieken bekijken"]
+        UC8["Community beheren"]
+        UC9["Nieuwsbrief versturen"]
+        UC10["Samenwerken met merken"]
+        Maria["Maria (Blogger)"]
+        UC11["Blogpost lezen"]
+        UC12["Comment plaatsen"]
+        UC13["Abonneren op nieuwsbrief"]
+        UC14["Blog delen op social media"]
+        Reader["Lezer"]
+        UC15["Samenwerkingsvoorstel sturen"]
+        UC16["Content partnership aangaan"]
+        Brand["Merk/Influencer"]
+  end
+    Maria --> UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7 & UC8 & UC9 & UC10
+    UC3 -. include .-> UC2
+    UC8 -. include .-> UC5
+    Reader --> UC11 & UC12 & UC13 & UC14
+    Brand --> UC15 & UC16
+    UC10 -. include .-> UC16
