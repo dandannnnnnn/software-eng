@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inky — Blog Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0f0e0e;
+    --paper: #f7f4ef;
+    --cream: #ede9e1;
+    --rust: #c0392b;
+    --gold: #b8860b;
+    --muted: #7a7268;
+    --border: #d9d3c7;
+    --shadow: rgba(15,14,14,0.08);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+  /* ─── UTILITY ─── */
+  .hidden { display: none !important; }
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.6rem 1.4rem;
+    border-radius: 2px;
+    border: 1.5px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    letter-spacing: 0.03em;
+  }
+  .btn:hover { background: var(--ink); color: var(--paper); }
+  .btn-primary { background: var(--ink); color: var(--paper); }
+  .btn-primary:hover { background: #333; }
+  .btn-danger { border-color: var(--rust); color: var(--rust); }
+  .btn-danger:hover { background: var(--rust); color: white; }
+  .btn-sm { padding: 0.35rem 0.9rem; font-size: 0.8rem; }
+
+  /* ─── AUTH SCREEN ─── */
+  #auth-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: stretch;
+  }
+  .auth-left {
+    flex: 1;
+    background: var(--ink);
+    color: var(--paper);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .auth-left::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 300px; height: 300px;
+    border: 60px solid rgba(255,255,255,0.04);
+    border-radius: 50%;
+  }
+  .auth-left::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: -40px;
+    width: 240px; height: 240px;
+    border: 50px solid rgba(255,255,255,0.03);
+    border-radius: 50%;
+  }
+  .auth-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 4rem;
+    font-weight: 900;
+    font-style: italic;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+  }
+  .auth-tagline {
+    font-size: 1rem;
+    color: rgba(247,244,239,0.6);
+    max-width: 280px;
+    line-height: 1.7;
+    position: relative;
+    z-index: 1;
+  }
+  .auth-right {
+    width: 480px;
+    padding: 4rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: var(--paper);
+  }
+  .auth-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 2.5rem;
+    border-bottom: 2px solid var(--border);
+  }
+  .auth-tab {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .auth-tab.active { color: var(--ink); border-bottom-color: var(--ink); }
+  .auth-form { display: flex; flex-direction: column; gap: 1.1rem; }
+  .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+  .form-group label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .form-group input, .form-group textarea, .form-group select {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--border);
+    border-radius: 2px;
+    background: white;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  .form-group input:focus, .form-group textarea:focus { border-color: var(--ink); }
+  .form-group textarea { resize: vertical; min-height: 120px; }
+  .error-msg {
+    background: #fdf0ef;
+    border: 1.5px solid #e8b4b0;
+    border-radius: 2px;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    color: var(--rust);
+    margin-top: 0.5rem;
+  }
+  .success-msg {
+    background: #f0fdf4;
+    border: 1.5px solid #a7f3d0;
+    border-radius: 2px;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    color: #166534;
+  }
+
+  /* ─── MAIN LAYOUT ─── */
+  #main-app { display: flex; flex-direction: column; min-height: 100vh; }
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--paper);
+    border-bottom: 1.5px solid var(--border);
+    padding: 0 2rem;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    backdrop-filter: blur(8px);
+  }
+  .header-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.75rem;
+    font-weight: 900;
+    font-style: italic;
+    color: var(--ink);
+    text-decoration: none;
+    cursor: pointer;
+    letter-spacing: -0.02em;
+  }
+  .header-center {
+    flex: 1;
+    max-width: 400px;
+    margin: 0 2rem;
+    position: relative;
+  }
+  .search-input {
+    font-family: 'DM Sans', sans-serif;
+    width: 100%;
+    padding: 0.5rem 1rem 0.5rem 2.5rem;
+    border: 1.5px solid var(--border);
+    border-radius: 2px;
+    background: var(--cream);
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--ink); background: white; }
+  .search-icon {
+    position: absolute;
+    left: 0.75rem; top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 0.9rem;
+    pointer-events: none;
+  }
+  .header-actions { display: flex; align-items: center; gap: 1rem; }
+  .avatar-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    cursor: pointer;
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.15s;
+  }
+  .avatar-btn:hover { opacity: 0.8; }
+
+  /* ─── FEED ─── */
+  .app-content { display: flex; gap: 0; max-width: 1100px; margin: 0 auto; width: 100%; padding: 2.5rem 2rem; }
+  .feed-main { flex: 1; min-width: 0; }
+  .feed-sidebar { width: 300px; padding-left: 3rem; }
+  .feed-header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1.5px solid var(--border);
+  }
+  .feed-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+  }
+  .feed-toggle { display: flex; gap: 0.5rem; }
+  .toggle-btn {
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.3rem 0.9rem;
+    border: 1.5px solid var(--border);
+    background: none;
+    border-radius: 2px;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.15s;
+    letter-spacing: 0.04em;
+  }
+  .toggle-btn.active { border-color: var(--ink); color: var(--ink); background: var(--cream); }
+
+  /* ─── POST CARD ─── */
+  .post-card {
+    border: 1.5px solid var(--border);
+    border-radius: 3px;
+    background: white;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    transition: box-shadow 0.15s, transform 0.15s;
+  }
+  .post-card:hover { box-shadow: 0 4px 20px var(--shadow); transform: translateY(-1px); }
+  .post-img { width: 100%; height: 220px; object-fit: cover; display: block; background: var(--cream); }
+  .post-img-placeholder {
+    width: 100%; height: 180px;
+    background: linear-gradient(135deg, var(--cream) 0%, #e8e3d9 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--border);
+    font-size: 2.5rem;
+  }
+  .post-body { padding: 1.5rem; }
+  .post-meta {
+    display: flex; align-items: center; gap: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+  }
+  .post-author-link {
+    font-weight: 500;
+    color: var(--ink);
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .post-author-link:hover { text-decoration: underline; }
+  .post-badge {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--muted);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .post-badge.age { background: #fdf0ef; border-color: #e8b4b0; color: var(--rust); }
+  .post-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 0.6rem;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .post-title:hover { color: var(--rust); }
+  .post-excerpt {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.65;
+    margin-bottom: 1.1rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .post-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+  .action-btn {
+    display: flex; align-items: center; gap: 0.35rem;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+    border: 1.5px solid var(--border);
+    background: none;
+    border-radius: 2px;
+    cursor: pointer;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    font-weight: 500;
+  }
+  .action-btn:hover { border-color: var(--ink); color: var(--ink); }
+  .action-btn.liked { border-color: var(--rust); color: var(--rust); background: #fdf0ef; }
+  .action-btn.delete { border-color: var(--rust); color: var(--rust); }
+  .action-btn.delete:hover { background: var(--rust); color: white; }
+  .action-btn.follow { border-color: var(--ink); color: var(--ink); }
+  .action-btn.follow.following { background: var(--ink); color: var(--paper); }
+
+  /* ─── COMMENTS ─── */
+  .comments-section {
+    border-top: 1.5px solid var(--border);
+    padding: 1.2rem 1.5rem;
+    background: var(--cream);
+  }
+  .comment-list { margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+  .comment-item {
+    display: flex; gap: 0.75rem;
+    font-size: 0.875rem;
+  }
+  .comment-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--ink); color: var(--paper);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+    font-family: 'Playfair Display', serif;
+  }
+  .comment-content { flex: 1; }
+  .comment-username { font-weight: 500; font-size: 0.8rem; color: var(--ink); }
+  .comment-text { color: var(--muted); margin-top: 0.1rem; line-height: 1.5; }
+  .comment-del {
+    background: none; border: none; cursor: pointer; color: var(--border);
+    font-size: 0.75rem; padding: 0; transition: color 0.15s;
+    margin-top: 0.1rem;
+  }
+  .comment-del:hover { color: var(--rust); }
+  .comment-form { display: flex; gap: 0.5rem; }
+  .comment-input {
+    flex: 1;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.9rem;
+    border: 1.5px solid var(--border);
+    border-radius: 2px;
+    background: white;
+    outline: none;
+  }
+  .comment-input:focus { border-color: var(--ink); }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar-section { margin-bottom: 2.5rem; }
+  .sidebar-title {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1.5px solid var(--border);
+  }
+  .suggested-user {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.6rem 0;
+    cursor: pointer;
+  }
+  .suggested-user:hover .su-name { text-decoration: underline; }
+  .su-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--ink); color: var(--paper);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 700;
+    font-family: 'Playfair Display', serif;
+    flex-shrink: 0;
+  }
+  .su-info { flex: 1; }
+  .su-name { font-size: 0.875rem; font-weight: 500; }
+  .su-stats { font-size: 0.75rem; color: var(--muted); }
+  .su-follow {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.7rem;
+    border: 1.5px solid var(--ink);
+    background: none; border-radius: 2px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-weight: 500;
+    transition: all 0.15s;
+  }
+  .su-follow:hover { background: var(--ink); color: var(--paper); }
+  .su-follow.following { background: var(--ink); color: var(--paper); }
+
+  /* ─── NEW POST MODAL ─── */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(15,14,14,0.6);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 2rem;
+  }
+  .modal {
+    background: var(--paper);
+    border-radius: 3px;
+    width: 100%; max-width: 680px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  .modal-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+  .modal-close {
+    background: none; border: none; cursor: pointer;
+    font-size: 1.2rem; color: var(--muted);
+    line-height: 1; padding: 0.25rem;
+    transition: color 0.15s;
+  }
+  .modal-close:hover { color: var(--ink); }
+  .modal-body { padding: 2rem; display: flex; flex-direction: column; gap: 1.2rem; }
+  .modal-footer {
+    padding: 1.25rem 2rem;
+    border-top: 1.5px solid var(--border);
+    display: flex; gap: 0.75rem; justify-content: flex-end;
+    background: var(--cream);
+  }
+  .age-check { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; }
+  .age-check input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; }
+  .age-check span { font-size: 0.875rem; color: var(--muted); }
+  .media-upload-area {
+    border: 2px dashed var(--border);
+    border-radius: 3px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    background: var(--cream);
+  }
+  .media-upload-area:hover { border-color: var(--ink); background: var(--paper); }
+  .media-upload-area.has-file { border-color: #a7f3d0; background: #f0fdf4; }
+  .upload-icon { font-size: 1.5rem; color: var(--muted); margin-bottom: 0.5rem; }
+  .upload-text { font-size: 0.875rem; color: var(--muted); }
+  #media-file-input { display: none; }
+
+  /* ─── PROFILE VIEW ─── */
+  .profile-header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 3rem 2rem;
+    text-align: center;
+    position: relative;
+  }
+  .profile-avatar-large {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: var(--paper); color: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem; font-weight: 700;
+    margin: 0 auto 1rem;
+    border: 3px solid rgba(247,244,239,0.3);
+  }
+  .profile-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.75rem; font-weight: 700;
+  }
+  .profile-username { color: rgba(247,244,239,0.6); font-size: 0.9rem; margin-top: 0.25rem; }
+  .profile-stats {
+    display: flex; gap: 2rem; justify-content: center;
+    margin-top: 1.5rem;
+  }
+  .profile-stat { text-align: center; }
+  .profile-stat-num { font-size: 1.5rem; font-weight: 700; font-family: 'Playfair Display', serif; }
+  .profile-stat-label { font-size: 0.75rem; color: rgba(247,244,239,0.6); margin-top: 0.2rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .profile-actions {
+    display: flex; gap: 0.75rem; justify-content: center; margin-top: 1.5rem;
+  }
+  .btn-light { background: transparent; color: var(--paper); border-color: rgba(247,244,239,0.4); }
+  .btn-light:hover { background: rgba(247,244,239,0.15); color: var(--paper); }
+  .profile-posts { max-width: 700px; margin: 2.5rem auto; padding: 0 2rem; }
+  .profile-section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem; font-weight: 700;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1.5px solid var(--border);
+  }
+  .back-btn {
+    position: absolute; top: 1rem; left: 1.5rem;
+    background: none; border: none; cursor: pointer;
+    color: rgba(247,244,239,0.7); font-size: 0.875rem;
+    font-family: 'DM Sans', sans-serif;
+    display: flex; align-items: center; gap: 0.35rem;
+    transition: color 0.15s;
+  }
+  .back-btn:hover { color: var(--paper); }
+
+  /* ─── EDIT PROFILE MODAL ─── */
+  .profile-bio { font-size: 0.9rem; color: rgba(247,244,239,0.7); margin-top: 0.5rem; max-width: 400px; margin-left: auto; margin-right: auto; }
+
+  /* ─── DELETE CONFIRM ─── */
+  .confirm-modal { max-width: 420px; }
+  .confirm-modal .modal-body { text-align: center; }
+  .confirm-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+  .confirm-text { font-size: 0.95rem; color: var(--muted); line-height: 1.6; }
+
+  /* ─── POST DETAIL ─── */
+  .post-detail { max-width: 740px; margin: 2.5rem auto; padding: 0 2rem; }
+  .post-detail-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.4rem; font-weight: 900;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+  }
+  .post-detail-img { width: 100%; border-radius: 3px; margin: 1.5rem 0; max-height: 400px; object-fit: cover; }
+  .post-detail-body { font-size: 1.05rem; line-height: 1.8; color: #2a2a2a; white-space: pre-wrap; }
+  .age-gate {
+    background: #fdf0ef;
+    border: 1.5px solid #e8b4b0;
+    border-radius: 3px;
+    padding: 2rem;
+    text-align: center;
+    margin: 1rem 0;
+  }
+  .age-gate-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem; font-weight: 700;
+    color: var(--rust);
+    margin-bottom: 0.5rem;
+  }
+  .age-gate-text { font-size: 0.875rem; color: var(--muted); }
+
+  /* ─── SEARCH ─── */
+  .search-results { max-width: 700px; margin: 2.5rem auto; padding: 0 2rem; }
+  .search-query { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; margin-bottom: 1.5rem; }
+  .search-query span { color: var(--rust); font-style: italic; }
+  .no-results { text-align: center; padding: 3rem; color: var(--muted); }
+  .no-results-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+  /* ─── EMPTY STATE ─── */
+  .empty-state {
+    text-align: center; padding: 4rem 2rem; color: var(--muted);
+  }
+  .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+  .empty-text { font-size: 0.95rem; line-height: 1.6; }
+
+  /* ─── TOAST ─── */
+  #toast {
+    position: fixed; bottom: 2rem; right: 2rem; z-index: 9999;
+    background: var(--ink); color: var(--paper);
+    padding: 0.9rem 1.5rem;
+    border-radius: 3px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-width: 320px;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.error { background: var(--rust); }
+
+  @media (max-width: 768px) {
+    .auth-left { display: none; }
+    .auth-right { width: 100%; padding: 2rem; }
+    .feed-sidebar { display: none; }
+    .app-content { padding: 1.5rem 1rem; }
+    .header-center { max-width: 180px; margin: 0 1rem; }
+    .post-detail { padding: 0 1rem; }
+    .post-detail-title { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── AUTH SCREEN ─── -->
+<div id="auth-screen">
+  <div class="auth-left">
+    <div class="auth-logo">Inky</div>
+    <p class="auth-tagline">A space for writers and curious readers. Share your story, discover others.</p>
+  </div>
+  <div class="auth-right">
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Inloggen</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">Registreren</button>
+    </div>
+
+    <!-- Login Form -->
+    <div id="login-form" class="auth-form">
+      <div class="form-group">
+        <label>Gebruikersnaam</label>
+        <input type="text" id="login-username" placeholder="jouw gebruikersnaam" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Wachtwoord</label>
+        <input type="password" id="login-password" placeholder="••••••••••••" autocomplete="current-password">
+      </div>
+      <div id="login-error" class="error-msg hidden"></div>
+      <button class="btn btn-primary" onclick="handleLogin()" style="margin-top:0.5rem">Inloggen</button>
+      <p style="font-size:0.8rem;color:var(--muted);text-align:center;margin-top:0.5rem">
+        Demo: gebruiker <strong>branko</strong> / wachtwoord <strong>wachtwoord123!</strong>
+      </p>
+    </div>
+
+    <!-- Register Form -->
+    <div id="register-form" class="auth-form hidden">
+      <div class="form-group">
+        <label>Gebruikersnaam</label>
+        <input type="text" id="reg-username" placeholder="bijv. anneschrijft">
+      </div>
+      <div class="form-group">
+        <label>E-mailadres</label>
+        <input type="email" id="reg-email" placeholder="je@email.com">
+      </div>
+      <div class="form-group">
+        <label>Wachtwoord (min. 12 tekens)</label>
+        <input type="password" id="reg-password" placeholder="Sterk wachtwoord vereist" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>Geboortedatum</label>
+        <input type="date" id="reg-birthdate">
+      </div>
+      <div id="reg-error" class="error-msg hidden"></div>
+      <div id="reg-success" class="success-msg hidden"></div>
+      <button class="btn btn-primary" onclick="handleRegister()" style="margin-top:0.5rem">Account aanmaken</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MAIN APP ─── -->
+<div id="main-app" class="hidden">
+  <header>
+    <span class="header-logo" onclick="showView('feed')">Inky</span>
+    <div class="header-center">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="search-input" placeholder="Zoeken naar posts of gebruikers…" oninput="handleSearch(this.value)" onkeydown="if(event.key==='Enter')handleSearch(this.value,true)">
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary btn-sm" onclick="openNewPostModal()">+ Schrijven</button>
+      <button class="avatar-btn" id="header-avatar" onclick="showView('myprofile')" title="Mijn profiel"></button>
+    </div>
+  </header>
+
+  <!-- Feed View -->
+  <div id="view-feed" class="app-content">
+    <div class="feed-main">
+      <div class="feed-header">
+        <h2 class="feed-title" id="feed-title-text">Ontdekken</h2>
+        <div class="feed-toggle">
+          <button class="toggle-btn active" id="toggle-all" onclick="setFeedMode('all')">Alles</button>
+          <button class="toggle-btn" id="toggle-following" onclick="setFeedMode('following')">Volgend</button>
+        </div>
+      </div>
+      <div id="posts-container"></div>
+    </div>
+    <aside class="feed-sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-title">Suggesties</div>
+        <div id="suggested-users"></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Search View -->
+  <div id="view-search" class="hidden search-results">
+    <div class="search-query" id="search-query-text">Resultaten voor <span></span></div>
+    <div id="search-results-container"></div>
+  </div>
+
+  <!-- Profile View -->
+  <div id="view-profile" class="hidden">
+    <div class="profile-header" id="profile-header-content"></div>
+    <div class="profile-posts" id="profile-posts-content"></div>
+  </div>
+
+  <!-- Post Detail View -->
+  <div id="view-post" class="hidden">
+    <div class="post-detail" id="post-detail-content"></div>
+  </div>
+</div>
+
+<!-- ─── NEW POST MODAL ─── -->
+<div id="new-post-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Nieuw artikel</span>
+      <button class="modal-close" onclick="closeNewPostModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Titel</label>
+        <input type="text" id="post-title-input" placeholder="Een pakkende titel…">
+      </div>
+      <div class="form-group">
+        <label>Afbeelding (optioneel)</label>
+        <div class="media-upload-area" id="upload-area" onclick="document.getElementById('media-file-input').click()">
+          <div class="upload-icon">📎</div>
+          <div class="upload-text" id="upload-text">Klik om een afbeelding toe te voegen (max. 5MB, JPG/PNG/GIF)</div>
+        </div>
+        <input type="file" id="media-file-input" accept="image/jpeg,image/png,image/gif" onchange="handleMediaUpload(event)">
+      </div>
+      <div class="form-group">
+        <label>Inhoud</label>
+        <textarea id="post-body-input" placeholder="Schrijf je verhaal hier…" style="min-height:180px"></textarea>
+      </div>
+      <label class="age-check">
+        <input type="checkbox" id="post-age-check">
+        <span>🔞 Leeftijdsverificatie vereist (enkel voor 18+)</span>
+      </label>
+      <div id="post-error" class="error-msg hidden"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="saveAsDraft()">Opslaan als concept</button>
+      <button class="btn btn-primary" onclick="publishPost()">Nu publiceren</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── CONFIRM DELETE MODAL ─── -->
+<div id="confirm-modal" class="modal-overlay hidden">
+  <div class="modal confirm-modal">
+    <div class="modal-body">
+      <div class="confirm-icon">🗑️</div>
+      <div class="modal-title" style="margin-bottom:0.75rem" id="confirm-title">Post verwijderen?</div>
+      <p class="confirm-text" id="confirm-text">Deze actie kan niet ongedaan worden gemaakt.</p>
+    </div>
+    <div class="modal-footer" style="justify-content:center;gap:1rem">
+      <button class="btn" onclick="closeConfirmModal()">Annuleren</button>
+      <button class="btn btn-danger" id="confirm-action-btn">Verwijderen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── EDIT PROFILE MODAL ─── -->
+<div id="edit-profile-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Profiel bewerken</span>
+      <button class="modal-close" onclick="closeEditProfileModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Weergavenaam</label>
+        <input type="text" id="edit-displayname">
+      </div>
+      <div class="form-group">
+        <label>Bio</label>
+        <textarea id="edit-bio" placeholder="Vertel iets over jezelf…" style="min-height:90px"></textarea>
+      </div>
+      <div id="edit-error" class="error-msg hidden"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeEditProfileModal()">Annuleren</button>
+      <button class="btn btn-primary" onclick="saveProfile()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── TOAST ─── -->
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let state = {
+  currentUser: null,
+  currentView: 'feed',
+  feedMode: 'all',
+  pendingMedia: null,
+  currentPostId: null,
+  viewingUserId: null,
+  confirmCallback: null,
+  searchTimeout: null,
+};
+
+// ── Initial data ──
+let users = [
+  { id: 'u1', username: 'branko', displayName: 'Branko Claes', password: 'wachtwoord123!', email: 'branko@example.com', bio: 'Schrijver en tech-enthousiasteling.', birthdate: '1995-04-12', following: ['u2'], followers: ['u2','u3'] },
+  { id: 'u2', username: 'mikhaela', displayName: 'Mikhaela Balaga', password: 'wachtwoord123!', email: 'mikhaela@example.com', bio: 'Lezer en student software engineering.', birthdate: '1998-07-22', following: ['u1','u3'], followers: ['u1'] },
+  { id: 'u3', username: 'thibau', displayName: 'Thibault Vranken', password: 'wachtwoord123!', email: 'thibau@example.com', bio: 'Frontend ontwikkelaar en blogger.', birthdate: '1997-11-05', following: ['u1'], followers: ['u1','u2'] },
+];
+
+let posts = [
+  {
+    id: 'p1', authorId: 'u2', title: 'Mijn eerste jaar als software-ingenieur',
+    body: 'Een jaar geleden begon ik mijn avontuur in de wereld van softwareontwikkeling. Wat ik geleerd heb, verbaasde mij meer dan ik verwacht had.\n\nHet eerste wat me opviel: communicatie is net zo belangrijk als code schrijven. Je kunt de mooiste algoritmen schrijven, maar als niemand begrijpt wat je bedoelt, heeft het weinig waarde.\n\nHet tweede inzicht was dat falen niet slecht is – het is een leermoment. Elke bug die ik tegenkwam leerde mij iets nieuws over hoe systemen werken.',
+    image: null, ageRestricted: false, isDraft: false,
+    likes: ['u3'], comments: [
+      { id: 'c1', authorId: 'u3', text: 'Super herkenbaar! Communicatie is inderdaad key.' },
+      { id: 'c2', authorId: 'u1', text: 'Prachtig geschreven, Mikhaela!' }
+    ],
+    createdAt: new Date(Date.now() - 3600000 * 5).toISOString()
+  },
+  {
+    id: 'p2', authorId: 'u3', title: 'Waarom ik gestopt ben met perfectie na te jagen',
+    body: 'Perfectie is de vijand van het voltooide. Dat klinkt als een cliché, maar pas na drie jaar als ontwikkelaar begrijp ik écht wat het betekent.\n\nIk schreef code die nooit goed genoeg was. Altijd nog een refactoring, altijd nog een optimalisatie. Totdat een collega me zei: "Shipped is better than perfect."\n\nDat was het moment dat alles veranderde.',
+    image: null, ageRestricted: false, isDraft: false,
+    likes: ['u1','u2'],
+    comments: [{ id: 'c3', authorId: 'u1', text: 'Shipped is better than perfect – dat ga ik onthouden!' }],
+    createdAt: new Date(Date.now() - 3600000 * 24).toISOString()
+  },
+  {
+    id: 'p3', authorId: 'u1', title: 'Nachtelijke gedachten over creativiteit',
+    body: 'Het is middernacht en ik kan niet slapen. Mijn hoofd zit vol ideeën die nergens heen willen.\n\nCreativiteit is gek. Het komt en gaat zonder uitnodiging. Je kunt het niet forceren, maar je kunt wel omgevingen creëren waarin het gedijt.\n\nVoor mij is dat: koffie, rustige muziek, en een blanco document.',
+    image: null, ageRestricted: false, isDraft: false,
+    likes: [],
+    comments: [],
+    createdAt: new Date(Date.now() - 3600000 * 48).toISOString()
+  }
+];
+
+// ══════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('login-form').classList.add('hidden');
+  document.getElementById('register-form').classList.add('hidden');
+  if (tab === 'login') {
+    document.querySelectorAll('.auth-tab')[0].classList.add('active');
+    document.getElementById('login-form').classList.remove('hidden');
+  } else {
+    document.querySelectorAll('.auth-tab')[1].classList.add('active');
+    document.getElementById('register-form').classList.remove('hidden');
+  }
+}
+
+function handleLogin() {
+  const username = document.getElementById('login-username').value.trim().toLowerCase();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.classList.add('hidden');
+
+  if (!username || !password) { showAuthError(errEl, 'Vul alle velden in.'); return; }
+  const user = users.find(u => u.username.toLowerCase() === username);
+  if (!user || user.password !== password) { showAuthError(errEl, 'Ongeldige gebruikersnaam of wachtwoord.'); return; }
+
+  state.currentUser = user;
+  enterApp();
+}
+
+function handleRegister() {
+  const username = document.getElementById('reg-username').value.trim().toLowerCase();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const birthdate = document.getElementById('reg-birthdate').value;
+  const errEl = document.getElementById('reg-error');
+  const successEl = document.getElementById('reg-success');
+  errEl.classList.add('hidden');
+  successEl.classList.add('hidden');
+
+  if (!username || !email || !password || !birthdate) { showAuthError(errEl, 'Vul alle velden in.'); return; }
+  if (password.length < 12) { showAuthError(errEl, 'Wachtwoord moet minimaal 12 tekens bevatten.'); return; }
+  const hasUpper = /[A-Z]/.test(password), hasLower = /[a-z]/.test(password), hasNum = /[0-9]/.test(password), hasSpec = /[^A-Za-z0-9]/.test(password);
+  if ([hasUpper,hasLower,hasNum,hasSpec].filter(Boolean).length < 3) { showAuthError(errEl, 'Wachtwoord vereist minstens 3 van: hoofdletters, kleine letters, cijfers, symbolen.'); return; }
+  if (users.find(u => u.username === username)) { showAuthError(errEl, 'Deze gebruikersnaam is al bezet.'); return; }
+  if (users.find(u => u.email === email)) { showAuthError(errEl, 'Dit e-mailadres is al geregistreerd.'); return; }
+
+  const newUser = {
+    id: 'u' + Date.now(),
+    username, displayName: username, password, email,
+    bio: '', birthdate, following: [], followers: []
+  };
+  users.push(newUser);
+  successEl.textContent = 'Account aangemaakt! Je kunt nu inloggen.';
+  successEl.classList.remove('hidden');
+  setTimeout(() => switchAuthTab('login'), 1500);
+}
+
+function showAuthError(el, msg) { el.textContent = msg; el.classList.remove('hidden'); }
+
+function enterApp() {
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('main-app').classList.remove('hidden');
+  document.getElementById('header-avatar').textContent = state.currentUser.displayName[0].toUpperCase();
+  showView('feed');
+}
+
+// ══════════════════════════════════════════
+//  VIEWS
+// ══════════════════════════════════════════
+function showView(view, extra) {
+  ['feed','search','profile','post'].forEach(v => {
+    document.getElementById('view-' + v).classList.add('hidden');
+  });
+  document.getElementById('view-' + view).classList.remove('hidden');
+  state.currentView = view;
+  if (view === 'feed') renderFeed();
+  if (view === 'search') renderSearch(extra);
+  if (view === 'profile') renderProfile(extra);
+  if (view === 'post') renderPostDetail(extra);
+}
+
+// ══════════════════════════════════════════
+//  FEED
+// ══════════════════════════════════════════
+function setFeedMode(mode) {
+  state.feedMode = mode;
+  document.getElementById('toggle-all').classList.toggle('active', mode === 'all');
+  document.getElementById('toggle-following').classList.toggle('active', mode === 'following');
+  document.getElementById('feed-title-text').textContent = mode === 'all' ? 'Ontdekken' : 'Volgend';
+  renderFeed();
+}
+
+function renderFeed(searchQuery) {
+  const container = document.getElementById('posts-container');
+  let visiblePosts = posts.filter(p => !p.isDraft);
+
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    visiblePosts = visiblePosts.filter(p => {
+      const author = getUserById(p.authorId);
+      return p.title.toLowerCase().includes(q) || p.body.toLowerCase().includes(q) || (author && author.displayName.toLowerCase().includes(q));
+    });
+  } else if (state.feedMode === 'following') {
+    const following = state.currentUser.following;
+    visiblePosts = visiblePosts.filter(p => following.includes(p.authorId) || p.authorId === state.currentUser.id);
+  }
+
+  visiblePosts = visiblePosts.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  if (visiblePosts.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-text">${state.feedMode==='following' ? 'Volg andere schrijvers om hun posts hier te zien.' : 'Nog geen posts. Wees de eerste die schrijft!'}</div></div>`;
+    return;
+  }
+  container.innerHTML = visiblePosts.map(p => renderPostCard(p)).join('');
+  renderSuggestedUsers();
+}
+
+function renderPostCard(post) {
+  const author = getUserById(post.authorId);
+  const isOwn = post.authorId === state.currentUser.id;
+  const isLiked = post.likes.includes(state.currentUser.id);
+  const userAge = getUserAge(state.currentUser);
+  const canSeeContent = !post.ageRestricted || userAge >= 18;
+  const excerpt = canSeeContent ? (post.body.slice(0, 180) + (post.body.length > 180 ? '…' : '')) : '🔞 Deze inhoud is enkel beschikbaar voor gebruikers van 18 jaar en ouder.';
+  const timeAgo = formatTimeAgo(post.createdAt);
+  const commentsHtml = renderCommentsHtml(post);
+
+  return `<div class="post-card" id="card-${post.id}">
+    ${post.image ? `<img class="post-img" src="${post.image}" alt="Post afbeelding">` : `<div class="post-img-placeholder">✍️</div>`}
+    <div class="post-body">
+      <div class="post-meta">
+        <span class="post-author-link" onclick="showView('profile','${author.id}')">${author.displayName}</span>
+        <span>·</span>
+        <span>${timeAgo}</span>
+        ${post.ageRestricted ? '<span class="post-badge age">18+</span>' : ''}
+      </div>
+      <div class="post-title" onclick="showView('post','${post.id}')">${escHtml(post.title)}</div>
+      <p class="post-excerpt">${escHtml(excerpt)}</p>
+      <div class="post-actions">
+        <button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${post.id}')">
+          ${isLiked?'❤️':'🤍'} <span id="like-count-${post.id}">${post.likes.length}</span>
+        </button>
+        <button class="action-btn" onclick="toggleComments('${post.id}')">
+          💬 ${post.comments.length}
+        </button>
+        ${!isOwn ? `<button class="action-btn follow ${state.currentUser.following.includes(author.id)?'following':''}" onclick="toggleFollow('${author.id}',this)">
+          ${state.currentUser.following.includes(author.id)?'✓ Volgend':'+ Volgen'}
+        </button>` : ''}
+        ${isOwn ? `<button class="action-btn delete" onclick="confirmDeletePost('${post.id}')">🗑️ Verwijderen</button>` : ''}
+      </div>
+    </div>
+    <div class="comments-section hidden" id="comments-${post.id}">
+      <div class="comment-list" id="comment-list-${post.id}">${commentsHtml}</div>
+      <div class="comment-form">
+        <input class="comment-input" id="comment-input-${post.id}" placeholder="Schrijf een reactie…" onkeydown="if(event.key==='Enter')addComment('${post.id}')">
+        <button class="btn btn-sm btn-primary" onclick="addComment('${post.id}')">Plaatsen</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderCommentsHtml(post) {
+  if (post.comments.length === 0) return '<div style="font-size:0.8rem;color:var(--muted);padding-bottom:0.5rem">Nog geen reacties.</div>';
+  return post.comments.map(c => {
+    const ca = getUserById(c.authorId);
+    const canDelete = c.authorId === state.currentUser.id || post.authorId === state.currentUser.id;
+    return `<div class="comment-item" id="comment-item-${c.id}">
+      <div class="comment-avatar">${ca.displayName[0].toUpperCase()}</div>
+      <div class="comment-content">
+        <div class="comment-username">${ca.displayName}</div>
+        <div class="comment-text">${escHtml(c.text)}</div>
+      </div>
+      ${canDelete ? `<button class="comment-del" onclick="deleteComment('${post.id}','${c.id}')" title="Verwijderen">✕</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function toggleComments(postId) {
+  const el = document.getElementById('comments-' + postId);
+  el.classList.toggle('hidden');
+}
+
+// ══════════════════════════════════════════
+//  SIDEBAR SUGGESTIONS
+// ══════════════════════════════════════════
+function renderSuggestedUsers() {
+  const container = document.getElementById('suggested-users');
+  const suggestions = users.filter(u => u.id !== state.currentUser.id).slice(0, 4);
+  container.innerHTML = suggestions.map(u => {
+    const isFollowing = state.currentUser.following.includes(u.id);
+    return `<div class="suggested-user">
+      <div class="su-avatar" onclick="showView('profile','${u.id}')">${u.displayName[0].toUpperCase()}</div>
+      <div class="su-info" onclick="showView('profile','${u.id}')">
+        <div class="su-name">${u.displayName}</div>
+        <div class="su-stats">${u.followers.length} volgers · ${posts.filter(p=>p.authorId===u.id&&!p.isDraft).length} posts</div>
+      </div>
+      <button class="su-follow ${isFollowing?'following':''}" onclick="toggleFollow('${u.id}',this)">${isFollowing?'✓':'+'}</button>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+//  INTERACTIONS
+// ══════════════════════════════════════════
+function toggleLike(postId) {
+  const post = posts.find(p => p.id === postId);
+  if (!post) return;
+  const idx = post.likes.indexOf(state.currentUser.id);
+  if (idx >= 0) post.likes.splice(idx, 1);
+  else post.likes.push(state.currentUser.id);
+  // Update UI inline
+  const card = document.getElementById('card-' + postId);
+  if (card) {
+    const isLiked = post.likes.includes(state.currentUser.id);
+    const btn = card.querySelector('.action-btn.liked, .action-btn');
+    const likeBtn = [...card.querySelectorAll('.action-btn')][0];
+    likeBtn.innerHTML = `${isLiked?'❤️':'🤍'} <span id="like-count-${postId}">${post.likes.length}</span>`;
+    likeBtn.className = 'action-btn' + (isLiked?' liked':'');
+  }
+}
+
+function toggleFollow(userId, btn) {
+  const target = getUserById(userId);
+  if (!target) return;
+  const followingIdx = state.currentUser.following.indexOf(userId);
+  const followerIdx = target.followers.indexOf(state.currentUser.id);
+  if (followingIdx >= 0) {
+    state.currentUser.following.splice(followingIdx, 1);
+    if (followerIdx >= 0) target.followers.splice(followerIdx, 1);
+    if (btn) { btn.textContent = btn.classList.contains('su-follow') ? '+' : '+ Volgen'; btn.classList.remove('following'); }
+    showToast('Je volgt ' + target.displayName + ' niet meer.');
+  } else {
+    state.currentUser.following.push(userId);
+    if (!target.followers.includes(state.currentUser.id)) target.followers.push(state.currentUser.id);
+    if (btn) { btn.textContent = btn.classList.contains('su-follow') ? '✓' : '✓ Volgend'; btn.classList.add('following'); }
+    showToast('Je volgt nu ' + target.displayName + '!');
+  }
+}
+
+function addComment(postId) {
+  const input = document.getElementById('comment-input-' + postId);
+  const text = input.value.trim();
+  if (!text) return;
+  const post = posts.find(p => p.id === postId);
+  if (!post) return;
+  const newComment = { id: 'c' + Date.now(), authorId: state.currentUser.id, text };
+  post.comments.push(newComment);
+  input.value = '';
+  const list = document.getElementById('comment-list-' + postId);
+  if (list) list.innerHTML = renderCommentsHtml(post);
+  // Update count button
+  const card = document.getElementById('card-' + postId);
+  if (card) {
+    const btns = card.querySelectorAll('.action-btn');
+    if (btns[1]) btns[1].innerHTML = '💬 ' + post.comments.length;
+  }
+}
+
+function deleteComment(postId, commentId) {
+  const post = posts.find(p => p.id === postId);
+  if (!post) return;
+  post.comments = post.comments.filter(c => c.id !== commentId);
+  const list = document.getElementById('comment-list-' + postId);
+  if (list) list.innerHTML = renderCommentsHtml(post);
+  showToast('Reactie verwijderd.');
+}
+
+// ══════════════════════════════════════════
+//  NEW POST
+// ══════════════════════════════════════════
+function openNewPostModal() {
+  document.getElementById('post-title-input').value = '';
+  document.getElementById('post-body-input').value = '';
+  document.getElementById('post-age-check').checked = false;
+  document.getElementById('post-error').classList.add('hidden');
+  document.getElementById('upload-text').textContent = 'Klik om een afbeelding toe te voegen (max. 5MB, JPG/PNG/GIF)';
+  document.getElementById('upload-area').classList.remove('has-file');
+  state.pendingMedia = null;
+  document.getElementById('new-post-modal').classList.remove('hidden');
+}
+
+function closeNewPostModal() {
+  document.getElementById('new-post-modal').classList.add('hidden');
+  state.pendingMedia = null;
+}
+
+function handleMediaUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showPostError('Afbeelding mag maximaal 5MB zijn.'); return; }
+  if (!['image/jpeg','image/png','image/gif'].includes(file.type)) { showPostError('Enkel JPG, PNG of GIF bestanden zijn toegestaan.'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    state.pendingMedia = e.target.result;
+    document.getElementById('upload-text').textContent = '✓ ' + file.name + ' geselecteerd';
+    document.getElementById('upload-area').classList.add('has-file');
+  };
+  reader.readAsDataURL(file);
+}
+
+function createPost(isDraft) {
+  const title = document.getElementById('post-title-input').value.trim();
+  const body = document.getElementById('post-body-input').value.trim();
+  const ageRestricted = document.getElementById('post-age-check').checked;
+  document.getElementById('post-error').classList.add('hidden');
+
+  if (!title) { showPostError('Vul een titel in.'); return; }
+  if (!body && !isDraft) { showPostError('Schrijf iets voor je publiceert.'); return; }
+
+  const newPost = {
+    id: 'p' + Date.now(),
+    authorId: state.currentUser.id,
+    title, body, image: state.pendingMedia || null,
+    ageRestricted, isDraft,
+    likes: [], comments: [],
+    createdAt: new Date().toISOString()
+  };
+  posts.unshift(newPost);
+  closeNewPostModal();
+  showView('feed');
+  showToast(isDraft ? 'Concept opgeslagen.' : 'Post gepubliceerd!');
+}
+
+function publishPost() { createPost(false); }
+function saveAsDraft() { createPost(true); }
+function showPostError(msg) { const el = document.getElementById('post-error'); el.textContent = msg; el.classList.remove('hidden'); }
+
+// ══════════════════════════════════════════
+//  DELETE POST
+// ══════════════════════════════════════════
+function confirmDeletePost(postId) {
+  const post = posts.find(p => p.id === postId);
+  if (!post) return;
+  if (post.authorId !== state.currentUser.id) { showToast('Je kunt alleen je eigen posts verwijderen.', true); return; }
+  openConfirmModal(
+    'Post verwijderen?',
+    `"${post.title}" wordt permanent verwijderd. Dit kan niet ongedaan worden gemaakt.`,
+    () => {
+      posts = posts.filter(p => p.id !== postId);
+      showToast('Post verwijderd.');
+      if (state.currentView === 'post') showView('feed');
+      else renderFeed();
+    }
+  );
+}
+
+function openConfirmModal(title, text, onConfirm) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-text').textContent = text;
+  state.confirmCallback = onConfirm;
+  document.getElementById('confirm-action-btn').onclick = () => { closeConfirmModal(); onConfirm(); };
+  document.getElementById('confirm-modal').classList.remove('hidden');
+}
+
+function closeConfirmModal() { document.getElementById('confirm-modal').classList.add('hidden'); }
+
+// ══════════════════════════════════════════
+//  PROFILE
+// ══════════════════════════════════════════
+function renderProfile(userId) {
+  const uid = userId || state.currentUser.id;
+  const user = getUserById(uid);
+  const isOwnProfile = uid === state.currentUser.id;
+  const isFollowing = !isOwnProfile && state.currentUser.following.includes(uid);
+  const userPosts = posts.filter(p => p.authorId === uid && (!p.isDraft || isOwnProfile)).sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt));
+
+  const header = document.getElementById('profile-header-content');
+  header.innerHTML = `
+    <button class="back-btn" onclick="showView('feed')">← Terug</button>
+    <div class="profile-avatar-large">${user.displayName[0].toUpperCase()}</div>
+    <div class="profile-name">${escHtml(user.displayName)}</div>
+    <div class="profile-username">@${user.username}</div>
+    ${user.bio ? `<div class="profile-bio">${escHtml(user.bio)}</div>` : ''}
+    <div class="profile-stats">
+      <div class="profile-stat"><div class="profile-stat-num">${userPosts.filter(p=>!p.isDraft).length}</div><div class="profile-stat-label">Posts</div></div>
+      <div class="profile-stat"><div class="profile-stat-num">${user.followers.length}</div><div class="profile-stat-label">Volgers</div></div>
+      <div class="profile-stat"><div class="profile-stat-num">${user.following.length}</div><div class="profile-stat-label">Volgend</div></div>
+    </div>
+    <div class="profile-actions">
+      ${isOwnProfile ? `<button class="btn btn-light" onclick="openEditProfileModal()">✏️ Profiel bewerken</button>` : ''}
+      ${!isOwnProfile ? `<button class="btn btn-light follow-profile-btn ${isFollowing?'following':''}" onclick="handleProfileFollow('${uid}',this)">${isFollowing?'✓ Volgend':'+ Volgen'}</button>` : ''}
+    </div>`;
+
+  const postsEl = document.getElementById('profile-posts-content');
+  let html = `<div class="profile-section-title">${isOwnProfile ? 'Mijn posts' : 'Posts van ' + user.displayName}</div>`;
+
+  if (isOwnProfile) {
+    const drafts = userPosts.filter(p => p.isDraft);
+    if (drafts.length > 0) {
+      html += `<div style="margin-bottom:1.5rem">
+        <div style="font-size:0.75rem;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem">Concepten (${drafts.length})</div>
+        ${drafts.map(p => renderPostCard(p)).join('')}
+      </div>`;
+    }
+    html += `<div>${userPosts.filter(p=>!p.isDraft).map(p => renderPostCard(p)).join('')}</div>`;
+  } else {
+    html += userPosts.filter(p=>!p.isDraft).map(p => renderPostCard(p)).join('');
+  }
+
+  if (userPosts.filter(p=>!p.isDraft).length === 0 && !isOwnProfile) {
+    html += '<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">Deze gebruiker heeft nog niets gepubliceerd.</div></div>';
+  }
+
+  postsEl.innerHTML = html;
+}
+
+function handleProfileFollow(userId, btn) {
+  const target = getUserById(userId);
+  toggleFollow(userId, null);
+  const isNowFollowing = state.currentUser.following.includes(userId);
+  btn.textContent = isNowFollowing ? '✓ Volgend' : '+ Volgen';
+  btn.classList.toggle('following', isNowFollowing);
+}
+
+function openEditProfileModal() {
+  document.getElementById('edit-displayname').value = state.currentUser.displayName;
+  document.getElementById('edit-bio').value = state.currentUser.bio || '';
+  document.getElementById('edit-error').classList.add('hidden');
+  document.getElementById('edit-profile-modal').classList.remove('hidden');
+}
+
+function closeEditProfileModal() { document.getElementById('edit-profile-modal').classList.add('hidden'); }
+
+function saveProfile() {
+  const displayName = document.getElementById('edit-displayname').value.trim();
+  const bio = document.getElementById('edit-bio').value.trim();
+  if (!displayName) { document.getElementById('edit-error').textContent = 'Naam mag niet leeg zijn.'; document.getElementById('edit-error').classList.remove('hidden'); return; }
+  state.currentUser.displayName = displayName;
+  state.currentUser.bio = bio;
+  document.getElementById('header-avatar').textContent = displayName[0].toUpperCase();
+  closeEditProfileModal();
+  showToast('Profiel opgeslagen!');
+  renderProfile(state.currentUser.id);
+}
+
+// ══════════════════════════════════════════
+//  POST DETAIL
+// ══════════════════════════════════════════
+function renderPostDetail(postId) {
+  const post = posts.find(p => p.id === postId);
+  if (!post) { showView('feed'); return; }
+  const author = getUserById(post.authorId);
+  const isOwn = post.authorId === state.currentUser.id;
+  const isLiked = post.likes.includes(state.currentUser.id);
+  const userAge = getUserAge(state.currentUser);
+  const canSee = !post.ageRestricted || userAge >= 18;
+
+  const container = document.getElementById('post-detail-content');
+  container.innerHTML = `
+    <button style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:0.875rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:0.35rem;padding:0;font-family:'DM Sans',sans-serif" onclick="showView('feed')">← Terug naar feed</button>
+    <div class="post-meta" style="margin-bottom:1rem">
+      <span class="post-author-link" onclick="showView('profile','${author.id}')">${author.displayName}</span>
+      <span>·</span>
+      <span>${formatTimeAgo(post.createdAt)}</span>
+      ${post.ageRestricted ? '<span class="post-badge age">18+</span>' : ''}
+      ${post.isDraft ? '<span class="post-badge">Concept</span>' : ''}
+    </div>
+    <h1 class="post-detail-title">${escHtml(post.title)}</h1>
+    ${post.image ? `<img class="post-detail-img" src="${post.image}" alt="">` : ''}
+    ${canSee
+      ? `<div class="post-detail-body">${escHtml(post.body)}</div>`
+      : `<div class="age-gate"><div class="age-gate-title">🔞 Leeftijdsverificatie vereist</div><div class="age-gate-text">Deze inhoud is enkel beschikbaar voor gebruikers van 18 jaar en ouder. Jouw geboortedatum geeft aan dat je niet oud genoeg bent om deze content te bekijken.</div></div>`}
+    <div class="post-actions" style="margin-top:2rem;padding-top:1.5rem;border-top:1.5px solid var(--border)">
+      <button class="action-btn ${isLiked?'liked':''}" onclick="toggleLikeDetail('${post.id}',this)">
+        ${isLiked?'❤️':'🤍'} <span id="detail-like-count">${post.likes.length}</span> likes
+      </button>
+      ${isOwn ? `<button class="action-btn delete" onclick="confirmDeletePost('${post.id}')">🗑️ Post verwijderen</button>` : ''}
+    </div>
+    <div style="margin-top:2rem">
+      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:1.25rem">Reacties (${post.comments.length})</div>
+      <div id="detail-comment-list">${renderDetailComments(post)}</div>
+      <div class="comment-form" style="margin-top:1rem">
+        <input class="comment-input" id="detail-comment-input" placeholder="Schrijf een reactie…" onkeydown="if(event.key==='Enter')addDetailComment('${post.id}')">
+        <button class="btn btn-sm btn-primary" onclick="addDetailComment('${post.id}')">Plaatsen</button>
+      </div>
+    </div>`;
+  state.currentPostId = postId;
+}
+
+function renderDetailComments(post) {
+  if (post.comments.length === 0) return '<div style="color:var(--muted);font-size:0.875rem;padding:1rem 0">Nog geen reacties. Wees de eerste!</div>';
+  return post.comments.map(c => {
+    const ca = getUserById(c.authorId);
+    const canDelete = c.authorId === state.currentUser.id || post.authorId === state.currentUser.id;
+    return `<div class="comment-item" style="padding:0.75rem 0;border-bottom:1px solid var(--border)" id="dc-${c.id}">
+      <div class="comment-avatar">${ca.displayName[0].toUpperCase()}</div>
+      <div class="comment-content">
+        <div class="comment-username">${ca.displayName}</div>
+        <div class="comment-text">${escHtml(c.text)}</div>
+      </div>
+      ${canDelete ? `<button class="comment-del" onclick="deleteDetailComment('${post.id}','${c.id}')">✕</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function addDetailComment(postId) {
+  const input = document.getElementById('detail-comment-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const post = posts.find(p => p.id === postId);
+  if (!post) return;
+  post.comments.push({ id: 'c' + Date.now(), authorId: state.currentUser.id, text });
+  input.value = '';
+  document.getElementById('detail-comment-list').innerHTML = renderDetailComments(post);
+}
+
+function deleteDetailComment(postId, commentId) {
+  const post = posts.find(p => p.id === postId);
+  if (!post) return;
+  post.comments = post.comments.filter(c => c.id !== commentId);
+  document.getElementById('detail-comment-list').innerHTML = renderDetailComments(post);
+  showToast('Reactie verwijderd.');
+}
+
+function toggleLikeDetail(postId, btn) {
+  const post = posts.find(p => p.id === postId);
+  if (!post) return;
+  const idx = post.likes.indexOf(state.currentUser.id);
+  if (idx >= 0) post.likes.splice(idx, 1);
+  else post.likes.push(state.currentUser.id);
+  const isLiked = post.likes.includes(state.currentUser.id);
+  btn.innerHTML = `${isLiked?'❤️':'🤍'} <span id="detail-like-count">${post.likes.length}</span> likes`;
+  btn.className = 'action-btn' + (isLiked?' liked':'');
+}
+
+// ══════════════════════════════════════════
+//  SEARCH
+// ══════════════════════════════════════════
+function handleSearch(value, immediate) {
+  clearTimeout(state.searchTimeout);
+  if (!value.trim()) { showView('feed'); return; }
+  if (immediate) { performSearch(value); return; }
+  state.searchTimeout = setTimeout(() => performSearch(value), 400);
+}
+
+function performSearch(query) {
+  const q = query.toLowerCase();
+  document.getElementById('search-query-text').innerHTML = 'Resultaten voor <span>"' + escHtml(query) + '"</span>';
+  showView('search', query);
+}
+
+function renderSearch(query) {
+  const q = (query || '').toLowerCase();
+  const container = document.getElementById('search-results-container');
+  if (!q) { container.innerHTML = ''; return; }
+
+  const matchingPosts = posts.filter(p => !p.isDraft && (p.title.toLowerCase().includes(q) || p.body.toLowerCase().includes(q)));
+  const matchingUsers = users.filter(u => u.id !== state.currentUser.id && (u.displayName.toLowerCase().includes(q) || u.username.toLowerCase().includes(q)));
+
+  let html = '';
+  if (matchingUsers.length > 0) {
+    html += `<div style="margin-bottom:2rem">
+      <div class="sidebar-title" style="margin-bottom:1rem">Gebruikers</div>
+      ${matchingUsers.map(u => {
+        const isFollowing = state.currentUser.following.includes(u.id);
+        return `<div class="suggested-user" style="padding:0.75rem 0;border-bottom:1px solid var(--border)">
+          <div class="su-avatar" onclick="showView('profile','${u.id}')">${u.displayName[0].toUpperCase()}</div>
+          <div class="su-info" onclick="showView('profile','${u.id}')">
+            <div class="su-name">${escHtml(u.displayName)}</div>
+            <div class="su-stats">@${u.username} · ${u.followers.length} volgers</div>
+          </div>
+          <button class="su-follow ${isFollowing?'following':''}" onclick="toggleFollow('${u.id}',this)">${isFollowing?'✓':'+'}</button>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+  if (matchingPosts.length > 0) {
+    html += `<div class="sidebar-title" style="margin-bottom:1rem">Posts</div>`;
+    html += matchingPosts.map(p => renderPostCard(p)).join('');
+  }
+  if (!matchingPosts.length && !matchingUsers.length) {
+    html = `<div class="no-results"><div class="no-results-icon">🔍</div><div style="font-size:0.95rem;color:var(--muted)">Geen resultaten gevonden voor "${escHtml(query)}".</div></div>`;
+  }
+  document.getElementById('search-query-text').innerHTML = 'Resultaten voor <span>"${escHtml(query)}"</span>';
+  document.getElementById('search-query-text').innerHTML = 'Resultaten voor <span>' + escHtml(query) + '</span>';
+  container.innerHTML = html;
+}
+
+// ══════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════
+function getUserById(id) { return users.find(u => u.id === id); }
+function getUserAge(user) {
+  if (!user.birthdate) return 99;
+  const bd = new Date(user.birthdate);
+  const now = new Date();
+  let age = now.getFullYear() - bd.getFullYear();
+  const m = now.getMonth() - bd.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < bd.getDate())) age--;
+  return age;
+}
+function formatTimeAgo(iso) {
+  const diff = (Date.now() - new Date(iso)) / 1000;
+  if (diff < 60) return 'zojuist';
+  if (diff < 3600) return Math.floor(diff/60) + ' min geleden';
+  if (diff < 86400) return Math.floor(diff/3600) + ' uur geleden';
+  if (diff < 604800) return Math.floor(diff/86400) + ' dagen geleden';
+  return new Date(iso).toLocaleDateString('nl-BE', {day:'numeric',month:'short',year:'numeric'});
+}
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (isError ? ' error' : '');
+  clearTimeout(t._to);
+  t._to = setTimeout(() => t.className = '', 3000);
+}
+
+// Close modals on overlay click
+document.getElementById('new-post-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeNewPostModal(); });
+document.getElementById('confirm-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeConfirmModal(); });
+document.getElementById('edit-profile-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeEditProfileModal(); });
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeNewPostModal(); closeConfirmModal(); closeEditProfileModal(); }
+});
+</script>
+</body>
+</html>
