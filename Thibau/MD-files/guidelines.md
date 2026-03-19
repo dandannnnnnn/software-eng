@@ -1,0 +1,18 @@
+- Kolommen: 
+  - hoofdzakelijk 2-koloms layout (content 70% / sidebar 30%); enkele pagina's gebruiken 1-kolom (artikelen).
+- Navigatie: 
+  - horizontale top-navigatie, zelfde op alle pagina's; actieve linkkleur: donker blauw; tekstkleur: donkergrijs.
+- Header: 
+  - wit achtergrond, titelkleur zwart, logo links, kleine tagline optioneel.
+- Titels: 
+  - H1 zwart, H2 donkergrijs; consistente lettergroottes en spacing.
+- Knoppen: 
+  - primaire knop blauw met witte tekst; secundaire knop grijs met witte tekst.
+- Menuachtergrond: 
+  - lichtgrijs; actieve state donker blauw.
+- Footer: 
+  - donkergrijze achtergrond, lichte tekstkleur, bevat contact + copyright.
+- Responsiviteit: 
+  - bij <=768px stapelen kolommen naar 1-kolom; navigatie wordt hamburger.
+- Spacing: 
+  - basisruimte 16px, gebruik veelvouden voor consist
